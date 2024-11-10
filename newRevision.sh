@@ -110,7 +110,7 @@ func getWeightHistory() -> (preop: Double, lowest: Double, current: Double, lowe
     return (preop, lowest, current, timing, months)
 }
 
-// Modify the follow-up compliance structure to include comments
+// First, define a struct for follow-up info
 struct FollowUpInfo {
     var regular: Bool
     var regularComment: String
@@ -120,38 +120,34 @@ struct FollowUpInfo {
     var labsComment: String
 }
 
-// Modify the follow-up questions section
+// Then modify the function to return this struct
 func getFollowUpInfo() -> FollowUpInfo {
-    print("\nRegular follow-up after surgery? (y/n)", terminator: ": ")
-    let regular = (readLine()?.lowercased() == "y")
+    printSectionHeader("Follow-up Compliance")
+    
+    let followUp = getInput(prompt: "Regular follow-up after surgery? (y/n)")
     var regularComment = ""
-    if !regular {
-        print("Why not?", terminator: ": ")
-        regularComment = readLine() ?? ""
+    if followUp.lowercased() == "n" {
+        regularComment = getInput(prompt: "Why not?")
     }
     
-    print("Taking Bariatric Vitamins? (y/n)", terminator: ": ")
-    let vitamins = (readLine()?.lowercased() == "y")
+    let vitamins = getInput(prompt: "Taking Bariatric Vitamins? (y/n)")
     var vitaminsComment = ""
-    if !vitamins {
-        print("Why not?", terminator: ": ")
-        vitaminsComment = readLine() ?? ""
+    if vitamins.lowercased() == "n" {
+        vitaminsComment = getInput(prompt: "Why not?")
     }
     
-    print("Regular bariatric labs? (y/n)", terminator: ": ")
-    let labs = (readLine()?.lowercased() == "y")
+    let labs = getInput(prompt: "Regular bariatric labs? (y/n)")
     var labsComment = ""
-    if !labs {
-        print("Why not?", terminator: ": ")
-        labsComment = readLine() ?? ""
+    if labs.lowercased() == "n" {
+        labsComment = getInput(prompt: "Why not?")
     }
     
     return FollowUpInfo(
-        regular: regular,
+        regular: followUp.lowercased() == "y",
         regularComment: regularComment,
-        vitamins: vitamins,
+        vitamins: vitamins.lowercased() == "y",
         vitaminsComment: vitaminsComment,
-        labs: labs,
+        labs: labs.lowercased() == "y",
         labsComment: labsComment
     )
 }
@@ -184,9 +180,14 @@ func getInitialSurgeryDetails() -> (details: String, revisionReason: String, wei
 
 // Modify the getScarAndMeshInfo function
 func getScarAndMeshInfo() -> (scars: String, mesh: String) {
-    let scars = getInput(prompt: "Describe other abdominal surgeries and location of surgical scars")
+    printSectionHeader("Surgical History")
+    
+    let scarsInput = getInput(prompt: "Describe other abdominal surgeries and location of surgical scars (ENTER for Only Laparoscopic Incisions)")
+    let scars = scarsInput.isEmpty ? "Only Laparoscopic Incisions" : scarsInput
+    
     let meshInput = getInput(prompt: "Have you ever had surgical mesh placed in your abdomen for hernia repair? (ENTER for No, or provide details if Yes)")
     let mesh = meshInput.isEmpty ? "No" : meshInput
+    
     return (scars, mesh)
 }
 
@@ -480,7 +481,7 @@ func getMedicalHistory() -> [MedicalCondition] {
     
     for condition in conditions {
         if condition == "CAD/MI/CHF/Stroke" {
-            print("\nDo you have any history of CAD, MI, CHF, Arrythmia,or Stroke? (y/ENTER for No)", terminator: ": ")
+            print("\nDo you have any history of CAD, MI, CHF, Arrhythmia,or Stroke? (y/ENTER for No)", terminator: ": ")
         } else {
             print("\nDo you have/take \(condition)? (y/ENTER for No)", terminator: ": ")
         }
@@ -501,7 +502,7 @@ func getMedicalHistory() -> [MedicalCondition] {
         }
         
         let outputName = if condition == "CAD/MI/CHF/Stroke" {
-            "Heart Disease - CAD, MI, CHF, Arrythmia, or Stroke"
+            "Heart Disease - CAD, MI, CHF, Arrhythmia, or Stroke"
         } else {
             condition
         }
