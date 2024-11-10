@@ -59,10 +59,29 @@ func getWeightHistory() -> (preop: Double, lowest: Double, current: Double, lowe
     let preop = Double(getInput(prompt: "Enter pre-op weight (lbs)")) ?? 0.0
     let current = Double(getInput(prompt: "Enter current weight (lbs)")) ?? 0.0
     
-    // For lowest weight, allow Enter if it equals current weight
-    print("Enter lowest weight achieved after surgery (lbs, press Enter if current weight is lowest)", terminator: ": ")
-    let lowestInput = readLine()?.trim() ?? ""
-    let lowest = lowestInput.isEmpty ? current : (Double(lowestInput) ?? 0.0)
+    // For lowest weight, add validation
+    var lowest: Double
+    while true {
+        print("Enter lowest weight achieved after surgery (lbs, ENTER if current weight is lowest)", terminator: ": ")
+        let lowestInput = readLine()?.trim() ?? ""
+        
+        if lowestInput.isEmpty {
+            lowest = current
+            break
+        }
+        
+        if let lowestWeight = Double(lowestInput) {
+            if lowestWeight <= current {
+                lowest = lowestWeight
+                break
+            } else {
+                print("\nWARNING: Lowest weight cannot be higher than current weight (\(current) lbs)")
+                print("Please enter a valid weight\n")
+            }
+        } else {
+            print("\nWARNING: Please enter a valid number\n")
+        }
+    }
     
     // Only ask for timing if lowest weight is different from current weight
     let months: Int
@@ -137,19 +156,37 @@ func getFollowUpInfo() -> FollowUpInfo {
     )
 }
 
-// Modify the getInitialSurgeryDetails function to include weight loss methods
+// Modify the getInitialSurgeryDetails function
 func getInitialSurgeryDetails() -> (details: String, revisionReason: String, weightLossMethods: String, complications: String) {
-    let details = getInput(prompt: "Tell me about your initial bariatric surgery (length of stay, complications, readmissions, other)")
-    let revisionReason = getInput(prompt: "What is your reason for pursuing revision? (press Enter for weight gain)").isEmpty ? "weight gain" : getInput(prompt: "What is your reason for pursuing revision?")
-    let weightLossMethods = getInput(prompt: "What methods are you currently using to maintain or lose weight? (press Enter for behavioral weight loss)").isEmpty ? "behavioral weight loss" : getInput(prompt: "What methods are you currently using to maintain or lose weight?")
-    let longTermComplications = getInput(prompt: "Any long term complications (reoperations, vitamin deficiencies, procedural related interventions)?")
+    let detailsInput = getInput(prompt: "Tell me about your initial bariatric surgery (length of stay, complications, readmissions, other) (ENTER for routine without complication)")
+    let details = detailsInput.isEmpty ? "routine without complication" : detailsInput
+    
+    // Modified revision reason logic
+    let revisionReasonInput = getInput(prompt: "What is your reason for pursuing revision? (ENTER for weight gain, c for complication, b for both)")
+    let revisionReason = if revisionReasonInput.isEmpty {
+        "weight gain"
+    } else if revisionReasonInput.lowercased() == "c" {
+        "complication"
+    } else if revisionReasonInput.lowercased() == "b" {
+        "weight gain and complication"
+    } else {
+        revisionReasonInput
+    }
+    
+    let weightLossMethodsInput = getInput(prompt: "What methods are you currently using to maintain or lose weight? (ENTER for behavioral weight loss)")
+    let weightLossMethods = weightLossMethodsInput.isEmpty ? "behavioral weight loss" : weightLossMethodsInput
+    
+    let longTermComplicationsInput = getInput(prompt: "Any long term complications (reoperations, vitamin deficiencies, procedural related interventions)? (ENTER for no long term complications)")
+    let longTermComplications = longTermComplicationsInput.isEmpty ? "no long term complications" : longTermComplicationsInput
+    
     return (details, revisionReason, weightLossMethods, longTermComplications)
 }
 
-// Create new function for scar and mesh information
+// Modify the getScarAndMeshInfo function
 func getScarAndMeshInfo() -> (scars: String, mesh: String) {
-    let scars = getInput(prompt: "Describe the size and location of surgical scars on your abdomen")
-    let mesh = getInput(prompt: "Have you ever had surgical mesh placed in your abdomen for hernia repair? If yes, please provide details")
+    let scars = getInput(prompt: "Describe other abdominal surgeries and location of surgical scars")
+    let meshInput = getInput(prompt: "Have you ever had surgical mesh placed in your abdomen for hernia repair? (ENTER for No, or provide details if Yes)")
+    let mesh = meshInput.isEmpty ? "No" : meshInput
     return (scars, mesh)
 }
 
@@ -161,10 +198,11 @@ func getSurgeryDate() -> String {
     while true {
         let yearInput = getInput(prompt: "Enter surgery year (YYYY)")
         if yearInput.count == 4, let year = Int(yearInput) {
+
             let currentYear = Calendar.current.component(.year, from: Date())
             if year >= 1900 && year <= currentYear {
                 // Get month
-                let monthInput = getInput(prompt: "Enter surgery month (1-12, or press Enter)")
+                let monthInput = getInput(prompt: "Enter surgery month (1-12, ENTER for January)")
                 let month: Int
                 
                 if monthInput.isEmpty {
@@ -406,6 +444,13 @@ struct MedicalCondition {
     let details: String
 }
 
+// Add this function at the start of your code
+func printSectionHeader(_ title: String) {
+    print("\n----------------------------------------")
+    print(String(format: "%@%@%@", "         ", title, "         "))
+    print("----------------------------------------\n")
+}
+
 // Add this new function to get medical history
 func getMedicalHistory() -> [MedicalCondition] {
     let conditions = [
@@ -431,17 +476,17 @@ func getMedicalHistory() -> [MedicalCondition] {
     
     var medicalHistory: [MedicalCondition] = []
     
-    print("\nPast Medical History:")
+    printSectionHeader("Past Medical History")
+    
     for condition in conditions {
         if condition == "CAD/MI/CHF/Stroke" {
-            print("\nDo you have any history of CAD, MI, CHF, or Stroke? (y/n)", terminator: ": ")
-        } else if condition.contains("GLP-1") {
-            print("\nAre you taking any GLP-1 medications (Ozempic, Mounjaro, Wegovy, Zepbound)? (y/n)", terminator: ": ")
+            print("\nDo you have any history of CAD, MI, CHF, Arrythmia,or Stroke? (y/ENTER for No)", terminator: ": ")
         } else {
-            print("\nDo you have/take \(condition)? (y/n)", terminator: ": ")
+            print("\nDo you have/take \(condition)? (y/ENTER for No)", terminator: ": ")
         }
         
-        let hasCondition = (readLine()?.lowercased() == "y")
+        let response = readLine()?.trim().lowercased() ?? ""
+        let hasCondition = response == "y"
         var details = ""
         
         if hasCondition {
@@ -456,9 +501,7 @@ func getMedicalHistory() -> [MedicalCondition] {
         }
         
         let outputName = if condition == "CAD/MI/CHF/Stroke" {
-            "Coronary Artery Disease (CAD), Heart Attack (MI), Congestive Heart Failure (CHF), or Stroke"
-        } else if condition.contains("GLP-1") {
-            "GLP-1 agents (Ozempic, Mounjaro, Wegovy, Zepbound)"
+            "Heart Disease - CAD, MI, CHF, Arrythmia, or Stroke"
         } else {
             condition
         }
@@ -483,7 +526,7 @@ let (patientAge, birthDate) = getBirthDate()
 let gender = getGender()
 
 // Get surgery date
-print("\nEnter surgery month (1-12, press Enter for January)", terminator: ": ")
+print("\nEnter surgery month (1-12, ENTER for January)", terminator: ": ")
 let monthInput = readLine()?.trim() ?? ""
 let surgeryMonth = monthInput.isEmpty ? "1" : monthInput
 
@@ -504,7 +547,7 @@ if let date = dateFormatter.date(from: surgeryDate) {
 
 // Get basic surgery info
 let surgeryType = getSurgeryType()
-let approach = getInput(prompt: "Laparoscopic or Open surgery? (Enter for Lap, o for Open)").lowercased() == "o" ? "Open" : "Laparoscopic"
+let approach = getInput(prompt: "Laparoscopic or Open surgery? (ENTER for Lap, o for Open)").lowercased() == "o" ? "Open" : "Laparoscopic"
 let surgeryLocation = getInput(prompt: "Where was your surgery done?")
     .split(separator: " ")
     .map { $0.capitalized }
@@ -527,13 +570,19 @@ let currentBMI = calculateBMI(weights.current, heightMeters: heightMeters)
 
 // Get medical history after weight history
 let medicalHistory = getMedicalHistory()
+
+// Add section header before surgical history
+printSectionHeader("Surgical History")
+
+// Then get surgical history
 let scarAndMeshInfo = getScarAndMeshInfo()
 
 // Get follow-up information
 let followUp = getFollowUpInfo()
 
-// Get conditions that have returned
-let conditions = getInput(prompt: "List any obesity-related medical conditions that improved but have returned")
+// Modify the conditions input
+let conditionsInput = getInput(prompt: "List any obesity-related medical conditions that improved but have returned (ENTER for none)")
+let conditions = conditionsInput.isEmpty ? "none" : conditionsInput
 
 // Calculate %EWL and %TWL
 let nadirEWL = calculateEWL(initialWeight: weights.preop, targetWeight: weights.lowest, idealWeight: ibw)
@@ -569,7 +618,7 @@ Past Medical History:
 }.joined(separator: "\n"))
 
 Surgical History:
-Surgical Scars: \(scarAndMeshInfo.scars)
+Abdominal Surgical History and Incision Locations: \(scarAndMeshInfo.scars)
 Abdominal Mesh History: \(scarAndMeshInfo.mesh)
 
 Height: \(Int(height.feet))'\(Int(height.inches))" (\(String(format: "%.2f", heightMeters)) m)
