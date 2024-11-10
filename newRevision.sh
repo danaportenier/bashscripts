@@ -57,11 +57,33 @@ func getHeight() -> (feet: Double, inches: Double) {
 // Get weight history
 func getWeightHistory() -> (preop: Double, lowest: Double, current: Double, lowestTiming: String, lowestMonths: Int) {
     let preop = Double(getInput(prompt: "Enter pre-op weight (lbs)")) ?? 0.0
-    let lowest = Double(getInput(prompt: "Enter lowest weight achieved after surgery (lbs)")) ?? 0.0
     let current = Double(getInput(prompt: "Enter current weight (lbs)")) ?? 0.0
     
-    // Get timing in months and convert to proper format
-    let months = Int(getInput(prompt: "When did you achieve your lowest weight? (months after surgery)")) ?? 0
+    // For lowest weight, allow Enter if it equals current weight
+    print("Enter lowest weight achieved after surgery (lbs, press Enter if current weight is lowest)", terminator: ": ")
+    let lowestInput = readLine()?.trim() ?? ""
+    let lowest = lowestInput.isEmpty ? current : (Double(lowestInput) ?? 0.0)
+    
+    // Only ask for timing if lowest weight is different from current weight
+    let months: Int
+    if lowest == current {
+        // Automatically calculate months since surgery
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "M/yyyy"
+        if let surgeryDateObj = dateFormatter.date(from: surgeryDate) {
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.month], from: surgeryDateObj, to: Date())
+            months = components.month ?? 0
+        } else {
+            months = 0
+        }
+    } else {
+        // Ask for timing only if lowest weight is different from current
+        let monthsInput = getInput(prompt: "When did you achieve your lowest weight? (months after surgery)")
+        months = Int(monthsInput) ?? 0
+    }
+    
+    // Convert months to years and months format
     let years = months / 12
     let remainingMonths = months % 12
     let timing = "\(years) years and \(remainingMonths) months after surgery"
@@ -461,13 +483,18 @@ let (patientAge, birthDate) = getBirthDate()
 let gender = getGender()
 
 // Get surgery date
-print("\nEnter surgery date (MM/YYYY)", terminator: ": ")
-let surgeryDate = readLine() ?? ""
+print("\nEnter surgery month (1-12, press Enter for January)", terminator: ": ")
+let monthInput = readLine()?.trim() ?? ""
+let surgeryMonth = monthInput.isEmpty ? "1" : monthInput
 
-// Declare formattedDate before the if-else block
+print("Enter surgery year (YYYY)", terminator: ": ")
+let surgeryYear = readLine()?.trim() ?? ""
+
+// Combine and format the surgery date
+let surgeryDate = "\(surgeryMonth)/\(surgeryYear)"
 let formattedDate: String
 let dateFormatter = DateFormatter()
-dateFormatter.dateFormat = "MM/yyyy"
+dateFormatter.dateFormat = "M/yyyy"
 if let date = dateFormatter.date(from: surgeryDate) {
     dateFormatter.dateFormat = "MMMM yyyy"
     formattedDate = dateFormatter.string(from: date)
@@ -477,7 +504,7 @@ if let date = dateFormatter.date(from: surgeryDate) {
 
 // Get basic surgery info
 let surgeryType = getSurgeryType()
-let approach = getInput(prompt: "Was the surgery Laparoscopic or Open? (l/o)").lowercased() == "l" ? "Laparoscopic" : "Open"
+let approach = getInput(prompt: "Laparoscopic or Open surgery? (Enter for Lap, o for Open)").lowercased() == "o" ? "Open" : "Laparoscopic"
 let surgeryLocation = getInput(prompt: "Where was your surgery done?")
     .split(separator: " ")
     .map { $0.capitalized }
