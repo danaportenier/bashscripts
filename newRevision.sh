@@ -115,12 +115,13 @@ func getFollowUpInfo() -> FollowUpInfo {
     )
 }
 
-// Modify the getInitialSurgeryDetails function to remove scar and mesh questions
-func getInitialSurgeryDetails() -> (details: String, complications: String, revisionReason: String) {
+// Modify the getInitialSurgeryDetails function to include weight loss methods
+func getInitialSurgeryDetails() -> (details: String, revisionReason: String, weightLossMethods: String, complications: String) {
     let details = getInput(prompt: "Tell me about your initial bariatric surgery (length of stay, complications, readmissions, other)")
     let revisionReason = getInput(prompt: "What is your reason for pursuing revision? (press Enter for weight gain)").isEmpty ? "weight gain" : getInput(prompt: "What is your reason for pursuing revision?")
+    let weightLossMethods = getInput(prompt: "What methods are you currently using to maintain or lose weight? (press Enter for behavioral weight loss)").isEmpty ? "behavioral weight loss" : getInput(prompt: "What methods are you currently using to maintain or lose weight?")
     let longTermComplications = getInput(prompt: "Any long term complications (reoperations, vitamin deficiencies, procedural related interventions)?")
-    return (details, longTermComplications, revisionReason)
+    return (details, revisionReason, weightLossMethods, longTermComplications)
 }
 
 // Create new function for scar and mesh information
@@ -459,29 +460,20 @@ let (patientAge, birthDate) = getBirthDate()
 // Get gender before height and weight info
 let gender = getGender()
 
-// Get surgery date and calculate time since surgery
-let surgeryDate = getSurgeryDate()
+// Get surgery date
+print("\nEnter surgery date (MM/YYYY)", terminator: ": ")
+let surgeryDate = readLine() ?? ""
+
+// Declare formattedDate before the if-else block
+let formattedDate: String
 let dateFormatter = DateFormatter()
-dateFormatter.dateFormat = "yyyy-MM"
-
-var formattedDate = ""
-var yearsSinceSurgery = 0
-var monthsSinceSurgery = 0
-
+dateFormatter.dateFormat = "MM/yyyy"
 if let date = dateFormatter.date(from: surgeryDate) {
-    // Format the date for display
     dateFormatter.dateFormat = "MMMM yyyy"
     formattedDate = dateFormatter.string(from: date)
-    
-    // Calculate time since surgery
-    let calendar = Calendar.current
-    let components = calendar.dateComponents([.year, .month], from: date, to: Date())
-    yearsSinceSurgery = components.year ?? 0
-    monthsSinceSurgery = components.month ?? 0
+} else {
+    formattedDate = surgeryDate
 }
-
-// Calculate age at surgery
-let ageAtSurgery = calculateAgeAtSurgery(birthDate: birthDate, surgeryDate: surgeryDate)
 
 // Get basic surgery info
 let surgeryType = getSurgeryType()
@@ -498,34 +490,32 @@ let totalInches = (height.feet * 12) + height.inches
 let heightMeters = totalInches * 0.0254
 let weights = getWeightHistory()
 
+// Get initial surgery details
+let initialSurgeryInfo = getInitialSurgeryDetails()
+
 // Calculate BMIs
 let preopBMI = calculateBMI(weights.preop, heightMeters: heightMeters)
 let lowestBMI = calculateBMI(weights.lowest, heightMeters: heightMeters)
 let currentBMI = calculateBMI(weights.current, heightMeters: heightMeters)
 
-// After getting height and weight info, calculate ideal body weight
-let ibw = idealBodyWeight(heightInches: totalInches, gender: gender)
-
-// Get initial surgery details right after weight
-let initialSurgeryInfo = getInitialSurgeryDetails()
+// Get medical history after weight history
+let medicalHistory = getMedicalHistory()
+let scarAndMeshInfo = getScarAndMeshInfo()
 
 // Get follow-up information
 let followUp = getFollowUpInfo()
 
-// Get revision information
+// Get conditions that have returned
 let conditions = getInput(prompt: "List any obesity-related medical conditions that improved but have returned")
 
-// Calculate %EWL and %TWL for both lowest and current weights
+// Calculate %EWL and %TWL
 let nadirEWL = calculateEWL(initialWeight: weights.preop, targetWeight: weights.lowest, idealWeight: ibw)
 let currentEWL = calculateEWL(initialWeight: weights.preop, targetWeight: weights.current, idealWeight: ibw)
 let nadirTWL = calculateTWL(initialWeight: weights.preop, targetWeight: weights.lowest)
 let currentTWL = calculateTWL(initialWeight: weights.preop, targetWeight: weights.current)
 
-// Add this in the main program execution section before creating the output string
-let medicalHistory = getMedicalHistory()
-
-// Create new function for scar and mesh information
-let scarAndMeshInfo = getScarAndMeshInfo()
+// Calculate ideal body weight
+let ibw = idealBodyWeight(heightInches: totalInches, gender: gender)
 
 // Modify the output string to reflect the new order:
 var output = """
@@ -539,6 +529,7 @@ Surgeon: Dr. \(surgeon)
 
 Initial Surgery Details: \(initialSurgeryInfo.details)
 Reason for Revision: \(initialSurgeryInfo.revisionReason)
+Current Weight Loss Methods: \(initialSurgeryInfo.weightLossMethods)
 Long Term Complications: \(initialSurgeryInfo.complications)
 
 Past Medical History:
@@ -578,7 +569,7 @@ Taking Bariatric Vitamins: \(followUp.vitamins ? "Yes" : "No\(followUp.vitaminsC
 Regular bariatric labs: \(followUp.labs ? "Yes" : "No\(followUp.labsComment.isEmpty ? "" : " - \(followUp.labsComment)")")
 
 Revision Information:
-Reason for Revision: \(revisionReason)
+Reason for Revision: \(initialSurgeryInfo.revisionReason)
 
 Medical Conditions That resolved or improved after bariatric surgery that have returned or worsened:
 \(conditions)
