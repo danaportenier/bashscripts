@@ -472,7 +472,8 @@ func getMedicalHistory() -> [MedicalCondition] {
         "Currently taking chronic Opioids",
         "Currently taking non-steroidal anti-inflammatory drugs (NSAIDs)",
         "Currently taking steroids (e.g., Prednisone)",
-        "Currently taking GLP-1 agents (Ozempic, Mounjaro, Wegovy, Zepbound)"
+        "Currently taking GLP-1 agents (Ozempic, Mounjaro, Wegovy, Zepbound)",
+        "Active or significant history of substance use (alcohol, tobacco, or drugs)"
     ]
     
     var medicalHistory: [MedicalCondition] = []
@@ -481,7 +482,9 @@ func getMedicalHistory() -> [MedicalCondition] {
     
     for condition in conditions {
         if condition == "CAD/MI/CHF/Stroke" {
-            print("\nDo you have any history of CAD, MI, CHF, Arrhythmia,or Stroke? (y/ENTER for No)", terminator: ": ")
+            print("\nDo you have any history of CAD, MI, CHF, or Stroke? (y/ENTER for No)", terminator: ": ")
+        } else if condition == "Active or significant history of substance use (alcohol, tobacco, or drugs)" {
+            print("\nAny active or significant history of substance use (alcohol, tobacco, or drugs)? (y/ENTER for No)", terminator: ": ")
         } else {
             print("\nDo you have/take \(condition)? (y/ENTER for No)", terminator: ": ")
         }
@@ -493,6 +496,8 @@ func getMedicalHistory() -> [MedicalCondition] {
         if hasCondition {
             if condition == "CAD/MI/CHF/Stroke" {
                 print("Please specify which condition(s) and details (or press Enter to skip)", terminator: ": ")
+            } else if condition == "Active or significant history of substance use (alcohol, tobacco, or drugs)" {
+                print("Please specify which substance(s) and details (or press Enter to skip)", terminator: ": ")
             } else if condition.contains("GLP-1") {
                 print("Which medication and dose? (or press Enter to skip)", terminator: ": ")
             } else {
@@ -501,14 +506,8 @@ func getMedicalHistory() -> [MedicalCondition] {
             details = readLine()?.trim() ?? ""
         }
         
-        let outputName = if condition == "CAD/MI/CHF/Stroke" {
-            "Heart Disease - CAD, MI, CHF, Arrhythmia, or Stroke"
-        } else {
-            condition
-        }
-        
         medicalHistory.append(MedicalCondition(
-            name: outputName,
+            name: condition,
             hasCondition: hasCondition,
             details: details
         ))
