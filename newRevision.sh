@@ -408,17 +408,19 @@ func getGender() -> String {
 }
 
 // Add this function to calculate age at surgery
-func calculateAgeAtSurgery(birthDate: String, surgeryDate: String) -> Int {
+func calculateAgeAtSurgery(birthDateString: String, surgeryDateString: String) -> Int {
     let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "MM/dd/yyyy"
     
-    guard let birthDateTime = dateFormatter.date(from: birthDate),
-          let surgeryDateTime = dateFormatter.date(from: surgeryDate + "/01") else {
-        return 0
-    }
+    // Parse birth date
+    dateFormatter.dateFormat = "MM/dd/yyyy"
+    guard let birthDate = dateFormatter.date(from: birthDateString) else { return 0 }
+    
+    // Parse surgery date
+    dateFormatter.dateFormat = "M/yyyy"
+    guard let surgeryDate = dateFormatter.date(from: surgeryDateString) else { return 0 }
     
     let calendar = Calendar.current
-    let ageComponents = calendar.dateComponents([.year], from: birthDateTime, to: surgeryDateTime)
+    let ageComponents = calendar.dateComponents([.year], from: birthDate, to: surgeryDate)
     return ageComponents.year ?? 0
 }
 
@@ -598,7 +600,7 @@ var output = """
 Birth Date: \(birthDate)
 Age: \(patientAge) years old \(gender == "m" ? "male" : "female")
 
-Date of Surgery: \(formattedDate)
+Date of Surgery: \(formattedDate) (performed at age \(calculateAgeAtSurgery(birthDateString: birthDate, surgeryDateString: surgeryDate)))
 Primary Bariatric Surgery: \(approach) \(surgeryType)
 Location: \(surgeryLocation)
 Surgeon: Dr. \(surgeon)
